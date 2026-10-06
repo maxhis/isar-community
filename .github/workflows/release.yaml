@@ -9,8 +9,23 @@ on:
       - "*"
 
 jobs:
+  verify_spm_distribution:
+    name: Verify SwiftPM distribution
+    if: contains(github.ref_name, '-spm.')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify packaged binaries and core version
+        env:
+          ISAR_DISTRIBUTION_TAG: ${{ github.ref_name }}
+        run: python3 tool/verify_spm_distribution.py "$ISAR_DISTRIBUTION_TAG"
+
   verify_version:
     name: Verify version matches release
+    # Distribution tags retain the upstream core version and bundled binaries.
+    if: "!contains(github.ref_name, '-spm.')"
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -195,7 +210,7 @@ jobs:
     name: Cleanup Release on Failure
     runs-on: ubuntu-24.04
     needs: [build_binaries, testlab, build_inspector, upload_to_repo]
-    if: always() && contains(needs.*.result, 'failure')
+    if: always() && !contains(github.ref_name, '-spm.') && contains(needs.*.result, 'failure')
     permissions:
       contents: write
     steps:
