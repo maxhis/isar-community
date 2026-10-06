@@ -22,6 +22,22 @@ jobs:
           ISAR_DISTRIBUTION_TAG: ${{ github.ref_name }}
         run: python3 tool/verify_spm_distribution.py "$ISAR_DISTRIBUTION_TAG"
 
+  verify_ios_spm_release:
+    name: Verify iOS SwiftPM release exports
+    if: contains(github.ref_name, '-spm.')
+    runs-on: macos-15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_OVERRIDE || vars.FLUTTER_VERSION }}
+      - name: Prepare Flutter iOS framework
+        run: flutter precache --ios
+      - name: Build and strip the SwiftPM framework
+        run: python3 tool/verify_ios_spm_release.py "$FLUTTER_ROOT/bin/cache/artifacts/engine/ios-release/Flutter.xcframework"
+
   verify_version:
     name: Verify version matches release
     # Distribution tags retain the upstream core version and bundled binaries.
